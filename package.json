@@ -7,20 +7,18 @@
     "node": ">=14.0.0"
   },
   "scripts": {
+    "build": "tsc",
     "dev": "vercel dev",
-    "deploy": "vercel deploy --prod"
+    "start": "vercel dev"
   },
   "dependencies": {
     "@vercel/node": "^3.0.0",
-    "express": "^4.18.2",
     "dotenv": "^16.3.1",
     "razorpay": "^2.9.2",
     "cors": "^2.8.5",
     "typescript": "^5.3.3"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^4.17.21",
     "@types/node": "^20.11.0",
     "vercel": "^32.0.0"
   }
