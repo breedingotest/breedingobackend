@@ -1,14 +1,9 @@
 {
     "version": 2,
-    "functions": {
-        "api/*.ts": {
-            "runtime": "@vercel/node@latest"
-        }
-    },
-    "routes": [
+    "builds": [
         {
-            "src": "/api/(.*)",
-            "dest": "/api/$1"
+            "src": "api/**/*.ts",
+            "use": "@vercel/node"
         }
     ]
 }
