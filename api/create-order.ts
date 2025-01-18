@@ -4,6 +4,17 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+interface OrderRequest {
+    amount: number;
+    currency?: string;
+    receipt?: string;
+    notes?: {
+        userEmail?: string;
+        userName?: string;
+        userPhone?: string;
+    };
+}
+
 // Initialize Razorpay
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID || '',
@@ -25,14 +36,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Only allow POST
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ 
+            success: false, 
+            error: 'Method not allowed' 
+        });
     }
 
     try {
-        const { amount, currency = 'INR' } = req.body;
+        console.log('Received order creation request:', req.body);
+        
+        const { amount, currency = 'INR', receipt, notes } = req.body as OrderRequest;
         
         // Validate amount
         if (!amount || amount < 1) {
+            console.error('Invalid amount:', amount);
             return res.status(400).json({
                 success: false,
                 error: 'Invalid amount. Amount must be greater than 0'
@@ -40,24 +57,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
 
         const options = {
-            amount: amount * 100, // amount in paise
+            amount: amount * 100, // Convert to paise
             currency,
-            receipt: `order_rcpt_${Date.now()}`,
+            receipt: receipt || `order_rcpt_${Date.now()}`,
+            notes: {
+                ...notes,
+                created_at: new Date().toISOString()
+            },
             payment_capture: 1 // Auto capture payment
         };
 
+        console.log('Creating order with options:', options);
+
         const order = await razorpay.orders.create(options);
         
+        console.log('Order created:', order);
+
+        // Return both order details and key_id for the frontend
         res.json({
             success: true,
-            order
+            order: {
+                id: order.id,
+                amount: order.amount,
+                currency: order.currency,
+                receipt: order.receipt,
+                status: order.status
+            },
+            key_id: process.env.RAZORPAY_KEY_ID
         });
     } catch (error) {
         console.error('Error creating order:', error);
         res.status(500).json({ 
             success: false,
             error: 'Failed to create order',
-            message: error instanceof Error ? error.message : 'Unknown error'
+            message: error instanceof Error ? error.message : 'Unknown error',
+            details: error instanceof Error ? {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            } : undefined
         });
     }
 }
